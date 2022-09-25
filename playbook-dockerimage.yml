@@ -1,0 +1,12 @@
+- hosts: localhost
+  become: true
+  tasks:
+  - name: Login to Dockerhub
+    command: docker login -u cloudhight -p Cloudhight_Admin123
+
+  - name: Create docker image from file
+    command: docker tag pet-adoption-image cloudhight/pet-adoption-image
+
+  - name: Push image to docker hub
+    command: docker push cloudhight/pet-adoption-image
+    ignore_errors: yes
