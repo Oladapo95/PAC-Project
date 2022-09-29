@@ -1,0 +1,20 @@
+- hosts: localhost
+  become: true
+  tasks:
+  - name: Login to Dockerhub
+    command: docker login -u devdapo -p @Nigeria95
+
+  - name: Create Docker image from File
+    command: docker build -t pet-adoption-image .
+    args:
+      chdir: /home/ubuntu/Docker
+
+  - name: Tag Image
+    command: docker tag pet-adoption-image devdapo/pet-adoption-image
+
+  - name: Push image to docker hub
+    command: docker push devdapo/pet-adoption-image
+  
+  - name: Remove Image from Node
+    command: docker rmi pet-adoption-image devdapo/pet-adoption-image
+    ignore_errors: yes

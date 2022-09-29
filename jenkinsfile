@@ -1,0 +1,38 @@
+pipeline {
+  agent any
+  stages {
+    stage('Pull Source Code from GitHub') {
+      steps {
+        git branch: 'main',
+          credentialsId: 'cloudhight-credentials',
+          url: 'https://github.com/CloudHight/Pet-Adoption-Containerisation-Project-Application-Team_1'
+      }
+    }
+    stage('Code Analysis') {
+      steps {
+        withSonarQubeEnv('sonarQube') {
+          sh "mvn sonar:sonar"
+        }
+      }
+    }
+    stage('Build Code') {
+      steps {
+        sh 'mvn -B -DskipTests clean package'
+      }
+    }
+    stage('Send Artifacts') {
+      steps {
+        sshagent(['jenkins-key']) {
+          sh 'scp -o StrictHostKeyChecking=no /var/lib/jenkins/workspace/pac-project/target/spring-petclinic-2.4.2.war ubuntu@13.42.42.193:/home/ubuntu/Docker'
+        }
+      }
+    }
+    stage('Deploy Application') {
+      steps {
+        sshagent(['jenkins-key']) {
+          sh 'ssh -o strictHostKeyChecking=no ubuntu@13.42.42.193 "cd /home/ubuntu/Ansible && ansible-playbook playbook-dockerimage.yml && ansible-playbook playbook-container.yml"'
+        }
+      }
+    }
+  }
+}
