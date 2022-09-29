@@ -36,18 +36,19 @@ locals {
   echo "*******Create Docker File********"
   cd /home/ubuntu/
   mkdir Docker
+  sudo chown -R ubuntu:ubuntu Docker
   touch Docker/Dockerfile
 
   echo "*******Insert Content to Docker File********"
   echo "${file(var.docker_file_path)}" > Docker/Dockerfile
 
   echo "*******Create Ansible Playbook that creates docker image********"
-  mkdir Ansible && touch Ansible/playbook-dockerimage.yml
-  echo "${file(var.docker_image_path)}" > Ansible/playbook-dockerimage.yml
+  mkdir Ansible && touch Ansible/playbook-dockerimage.yaml
+  echo "${file(var.docker_image_path)}" > Ansible/playbook-dockerimage.yaml
   
   echo "*******Create Ansible Playbook that creates docker container********"
-  touch Ansible/playbook-container.yml
-  echo "${file(var.docker_container_path)}" > Ansible/playbook-container.yml
+  touch Ansible/playbook-container.yaml
+  echo "${file(var.docker_container_path)}" > Ansible/playbook-container.yaml
 
 
   echo "*********Reboot after the whole thing********"

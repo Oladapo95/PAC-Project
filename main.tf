@@ -216,6 +216,14 @@ resource "aws_security_group" "pacpet1_docker_sg" {
     cidr_blocks = [var.all_ip]
   }
 
+    ingress {
+    description = "Allow Port 8080"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = [var.all_ip]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -302,29 +310,29 @@ resource "aws_instance" "pacpet1_jenkins" {
   }
 }
 
-resource "time_sleep" "wait_for_jenkins" {
-  depends_on = [aws_instance.pacpet1_jenkins]
-  create_duration = "150s"
-}
+# resource "time_sleep" "wait_for_jenkins" {
+#   depends_on = [aws_instance.pacpet1_jenkins]
+#   create_duration = "150s"
+# }
 
-#Echo password to screen
-resource "null_resource" "user_data_status_y" {
-  provisioner "local-exec" {
-    on_failure  = fail
-    interpreter = ["/bin/bash", "-c"]
-    command     = <<EOT
-          ssh -i pacpet1-key ubuntu@${aws_instance.pacpet1_jenkins.public_ip} "sudo cat /var/lib/jenkins/secrets/initialAdminPassword"
-          if [ $? -eq 0 ]; then
-          echo "user data sucessfully executed"
-          else
-            echo "Failed to execute user data"
-          fi
-     EOT
-  }
-    triggers = {
-    #remove this once you test it out as it should run only once
-    always_run ="${timestamp()}"
-  }
-  depends_on = [time_sleep.wait_for_jenkins]
+# #Echo password to screen
+# resource "null_resource" "user_data_status_y" {
+#   provisioner "local-exec" {
+#     on_failure  = fail
+#     interpreter = ["/bin/bash", "-c"]
+#     command     = <<EOT
+#           ssh -i pacpet1-key ubuntu@${aws_instance.pacpet1_jenkins.public_ip} "sudo cat /var/lib/jenkins/secrets/initialAdminPassword"
+#           if [ $? -eq 0 ]; then
+#           echo "user data sucessfully executed"
+#           else
+#             echo "Failed to execute user data"
+#           fi
+#      EOT
+#   }
+#     triggers = {
+#     #remove this once you test it out as it should run only once
+#     #always_run ="${timestamp()}"
+#   }
+#   depends_on = [time_sleep.wait_for_jenkins]
   
-}
+# }

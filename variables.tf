@@ -55,10 +55,10 @@ variable "docker_file_path" {
 
 #Ansible playbook Docker Image path
 variable "docker_image_path" {
-  default = "playbook-dockerimage.yml"
+  default = "playbook-dockerimage.yaml"
 }
 
 #Ansible playbook Docker Container path
 variable "docker_container_path" {
-  default = "playbook-container.yml"
+  default = "playbook-container.yaml"
 }

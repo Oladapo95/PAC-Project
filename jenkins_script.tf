@@ -19,6 +19,13 @@ locals {
   sudo apt-get update
   sudo apt-get install jenkins -y
   echo "*********Jenkins Install Complete********"
+
+  echo "*****Install git*********"
+  sudo apt install git -y
+
+  echo "*****Install Maven*******"
+  sudo apt install maven -y
+
   
   echo "*********This runs as the root and disables StrictHostChecking********"
   sudo bash -c 'echo "StrictHostKeyChecking No" >> /etc/ssh/ssh_config'
