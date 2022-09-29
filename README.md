@@ -1,4 +1,4 @@
-# Pet-Adoption-Containerisation-Project-using-Jenkins-pipeline-Team-EU-Team-1-12SEP
+# Pet-Adoption-Containerisation-Project-using-Jenkins-pipeline
 
 Step 1:
 Install required plugins: Maven and SSH Agent
