@@ -216,7 +216,7 @@ resource "aws_security_group" "pacpet1_docker_sg" {
     cidr_blocks = [var.all_ip]
   }
 
-    ingress {
+  ingress {
     description = "Allow Port 8080"
     from_port   = 8080
     to_port     = 8080
@@ -262,7 +262,48 @@ resource "aws_security_group" "pacpet1_mysql_sg" {
   }
 }
 
-#Creates a key pair resource
+#Security group for SonarQube
+resource "aws_security_group" "pacpet1_sonarqube_sg" {
+  name        = "pacpet1_sonarqube_sg"
+  description = "Allow traffic for SonarQube"
+  vpc_id      = aws_vpc.pacpet1_vpc.id
+
+  ingress {
+    description = "Allow Sonar traffic"
+    from_port   = 9000
+    to_port     = 9000
+    protocol    = "tcp"
+    cidr_blocks = [var.all_ip]
+  }
+  ingress {
+    description = "Allow traffic on port 80"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [var.all_ip]
+  }
+
+  ingress {
+    description = "Allow SSH traffic"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.all_ip]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "pacpet1_sonarqube_sg"
+  }
+}
+
+# #Creates a key pair resource
 # resource "aws_key_pair" "pacpet1_keyPair" {
 #   key_name   = var.key_name
 #   public_key = file(var.pacpet1_pubkey_path)
@@ -274,9 +315,9 @@ resource "aws_instance" "pacpet1_ansible" {
   instance_type               = "t2.micro"
   key_name                    = "pacpet1-key"
   associate_public_ip_address = true
-  subnet_id                   = aws_subnet.pacpet1_pubsn_02.id
+  subnet_id                   = aws_subnet.pacpet1_pubsn_01.id
   vpc_security_group_ids      = ["${aws_security_group.pacpet1_ansible_sg.id}"]
-  user_data = local.ansible_user_data
+  user_data                   = local.ansible_user_data
   tags = {
     Name = "pacpet1_ansible"
   }
@@ -290,7 +331,7 @@ resource "aws_instance" "pacpet1_docker" {
   associate_public_ip_address = true
   subnet_id                   = aws_subnet.pacpet1_pubsn_01.id
   vpc_security_group_ids      = ["${aws_security_group.pacpet1_docker_sg.id}"]
-  user_data = local.docker_user_data
+  user_data                   = local.docker_user_data
   tags = {
     Name = "pacpet1_docker"
   }
@@ -304,9 +345,23 @@ resource "aws_instance" "pacpet1_jenkins" {
   associate_public_ip_address = true
   subnet_id                   = aws_subnet.pacpet1_pubsn_02.id
   vpc_security_group_ids      = ["${aws_security_group.pacpet1_jenkins_sg.id}"]
-  user_data = local.jenkins_user_data
+  user_data                   = local.jenkins_user_data
   tags = {
     Name = "pacpet1_jenkins"
+  }
+}
+
+#Create SonarQube Server
+resource "aws_instance" "pacpet1_sonarqube" {
+  ami                         = "ami-0f540e9f488cfa27d"
+  instance_type               = "t2.medium"
+  key_name                    = "pacpet1-key"
+  associate_public_ip_address = true
+  subnet_id                   = aws_subnet.pacpet1_pubsn_02.id
+  vpc_security_group_ids      = ["${aws_security_group.pacpet1_sonarqube_sg.id}"]
+  user_data                   = local.sonarqube_user_data
+  tags = {
+    Name = "pacpet1_sonarqube"
   }
 }
 
@@ -334,5 +389,115 @@ resource "aws_instance" "pacpet1_jenkins" {
 #     #always_run ="${timestamp()}"
 #   }
 #   depends_on = [time_sleep.wait_for_jenkins]
-  
+
 # }
+
+
+#Create AMI from EC2 Instance
+resource "aws_ami_from_instance" "pacpet1_ami" {
+  name               = "pacpet1_ami"
+  source_instance_id = aws_instance.pacpet1_docker.id
+}
+
+##Add High Availability
+
+#Create Target Group
+resource "aws_lb_target_group" "pacpet1_tg" {
+  name     = "pacpet1-TG"
+  port     = 8080
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.pacpet1_vpc.id
+  health_check {
+    path                = "/"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 5
+    interval            = 15
+    matcher             = "200"
+  }
+}
+
+#Create Application Load Balancer
+resource "aws_lb" "pacpet1_lb" {
+  name               = "pacpet1-Lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = ["${aws_security_group.pacpet1_jenkins_sg.id}"]
+  subnets            = ["${aws_subnet.pacpet1_pubsn_01.id}", "${aws_subnet.pacpet1_pubsn_02.id}"]
+
+  enable_deletion_protection = false
+
+  tags = {
+    Name = "pacpet1-Lb"
+  }
+}
+
+# Create Load Balancer Listener
+resource "aws_lb_listener" "pacpet1-Lbl" {
+  load_balancer_arn = aws_lb.pacpet1_lb.arn
+  port              = "80"
+  protocol          = "HTTP"
+  default_action {
+    target_group_arn = aws_lb_target_group.pacpet1_tg.arn
+    type             = "forward"
+  }
+}
+
+#Create Launch Configuration
+resource "aws_launch_configuration" "pacpet1_lc" {
+  name_prefix                 = "pacpet1-lc-"
+  image_id                    = aws_ami_from_instance.pacpet1_ami.id
+  instance_type               = "t2.medium"
+  associate_public_ip_address = true
+  security_groups             = ["${aws_security_group.pacpet1_jenkins_sg.id}"]
+  key_name                    = "pacpet1-key"
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+#Create Auto Scaling group
+resource "aws_autoscaling_group" "pacpet1_asg" {
+  name                 = "pacpet1-ASG"
+  launch_configuration = aws_launch_configuration.pacpet1_lc.name
+  #Defines the vpc, az and subnets to launch in
+  vpc_zone_identifier       = ["${aws_subnet.pacpet1_pubsn_01.id}", "${aws_subnet.pacpet1_pubsn_02.id}"]
+  target_group_arns         = ["${aws_lb_target_group.pacpet1_tg.arn}"]
+  health_check_type         = "EC2"
+  health_check_grace_period = 30
+  desired_capacity          = 2
+  max_size                  = 4
+  min_size                  = 2
+  force_delete              = true
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_autoscaling_policy" "pacpet1_asg_policy" {
+  name                   = "pacpet1_asg_policy"
+  policy_type            = "TargetTrackingScaling"
+  autoscaling_group_name = aws_autoscaling_group.pacpet1_asg.name
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 60.0
+  }
+}
+
+#Create Hosted Zone
+resource "aws_route53_zone" "pacpet1_hosted_zone" {
+  name = "oladapoiyanda.com"
+}
+
+resource "aws_route53_record" "pacpd_record" {
+  zone_id = aws_route53_zone.pacpet1_hosted_zone.zone_id
+  name    = ""
+  type    = "A"
+  alias {
+    name                   = aws_lb.pacpet1_lb.dns_name
+    zone_id                = aws_lb.pacpet1_lb.zone_id
+    evaluate_target_health = true
+  }
+}

@@ -1,9 +1,7 @@
 locals {
   ansible_user_data = <<-EOF
   #!/bin/bash
-  echo "****************Change Hostname(IP) to something readable**************"
   sudo apt update -y
-  sudo hostname Ansible
 
   echo "*********Install Ansible********"
   sudo apt install software-properties-common
@@ -24,8 +22,6 @@ locals {
   ${aws_instance.pacpet1_docker.public_ip} ansible_ssh_private_key_file=${var.ans_prvkey_path}" >> /etc/ansible/hosts'
 
   echo "*********Install Docker engine ********"
-  echo "**We are installing docker so we can create the docker image in the ansible server"
-  echo "***Is it possible we create that image in the docker server itself***"
   sudo apt-get install ca-certificates curl gnupg lsb-release -y
   sudo mkdir -p /etc/apt/keyrings
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -36,21 +32,31 @@ locals {
   echo "*******Create Docker File********"
   cd /home/ubuntu/
   mkdir Docker
+  echo "*******We change the owner of this directory to ubuntu because ansible********"
+  echo "*******would need to drop a file in this directory and it cant do that if its owned by root********"
   sudo chown -R ubuntu:ubuntu Docker
   touch Docker/Dockerfile
 
-  echo "*******Insert Content to Docker File********"
+  #Insert Content to Docker File
   echo "${file(var.docker_file_path)}" > Docker/Dockerfile
 
-  echo "*******Create Ansible Playbook that creates docker image********"
+  #Create Ansible Playbook that creates docker image
   mkdir Ansible && touch Ansible/playbook-dockerimage.yaml
   echo "${file(var.docker_image_path)}" > Ansible/playbook-dockerimage.yaml
   
-  echo "*******Create Ansible Playbook that creates docker container********"
+  #Create Ansible Playbook that creates docker container
   touch Ansible/playbook-container.yaml
   echo "${file(var.docker_container_path)}" > Ansible/playbook-container.yaml
 
+  #Create Ansible Playbook that installs new relic infrastructure agent to monitor containers
+  touch Ansible/playbook-newrelic.yaml
+  echo "${file(var.newrelic_infra_path)}" > Ansible/playbook-newrelic.yaml
 
-  echo "*********Reboot after the whole thing********"
+  #Install New relic
+  curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash && sudo NEW_RELIC_API_KEY=NRAK-DKQ2N9WXV6A63PVHNF3DRG6SHE6 NEW_RELIC_ACCOUNT_ID=3644862 NEW_RELIC_REGION=EU /usr/local/bin/newrelic install -y
+
+  echo "****************Change Hostname(IP) to something readable**************"
+  sudo hostnamectl set-hostname Ansible
+  sudo reboot
   EOF
 }

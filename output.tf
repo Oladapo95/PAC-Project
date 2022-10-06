@@ -9,3 +9,12 @@ output "Ansible_Server" {
 output "Jenkins_Server" {
   value = aws_instance.pacpet1_jenkins.public_ip
 }
+
+output "SonarQube_Server" {
+  value = aws_instance.pacpet1_sonarqube.public_ip
+}
+
+#Export Name Servers
+output "NameServers" {
+  value = "${aws_route53_zone.pacpet1_hosted_zone.name_servers}"
+}

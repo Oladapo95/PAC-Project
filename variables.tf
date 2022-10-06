@@ -44,7 +44,7 @@ variable "pacpet1_prvkey_path" {
 
 #Path to Private Key on the Ansible Server
 variable "ans_prvkey_path" {
-  default = "/home/ubuntu/.ssh/prvkey_rsa"
+  default     = "/home/ubuntu/.ssh/prvkey_rsa"
   description = "Path to Private Key on the Ansible Server"
 }
 
@@ -61,4 +61,9 @@ variable "docker_image_path" {
 #Ansible playbook Docker Container path
 variable "docker_container_path" {
   default = "playbook-container.yaml"
+}
+
+#Ansible playbook NewRelic Infra path
+variable "newrelic_infra_path" {
+  default = "playbook-newrelic.yaml"
 }

@@ -10,5 +10,8 @@ locals {
   sudo apt update -y
   sudo apt install docker-ce docker-ce-cli -y
   
+  echo "****************Change Hostname(IP) to something readable**************"
+  sudo hostnamectl set-hostname Docker
+  sudo reboot
   EOF
 }

@@ -4,13 +4,13 @@ pipeline {
     stage('Pull Source Code from GitHub') {
       steps {
         git branch: 'main',
-          credentialsId: 'cloudhight-credentials',
-          url: 'https://github.com/CloudHight/Pet-Adoption-Containerisation-Project-Application-Team_1'
+          credentialsId: 'git-credentials',
+          url: 'https://github.com/Oladapo95/PAC-Project-Code'
       }
     }
     stage('Code Analysis') {
       steps {
-        withSonarQubeEnv('sonarQube') {
+        withSonarQubeEnv('SonarENV') {
           sh "mvn sonar:sonar"
         }
       }
@@ -22,15 +22,15 @@ pipeline {
     }
     stage('Send Artifacts') {
       steps {
-        sshagent(['jenkins-key']) {
-          sh 'scp -o StrictHostKeyChecking=no /var/lib/jenkins/workspace/pac-project/target/spring-petclinic-2.4.2.war ubuntu@13.42.42.193:/home/ubuntu/Docker'
+        sshagent(['ansible-prv-key']) {
+          sh 'scp -o StrictHostKeyChecking=no /var/lib/jenkins/workspace/pac-project/target/spring-petclinic-2.4.2.war ubuntu@13.40.164.130:/home/ubuntu/Docker'
         }
       }
     }
     stage('Deploy Application') {
       steps {
-        sshagent(['jenkins-key']) {
-          sh 'ssh -o strictHostKeyChecking=no ubuntu@13.42.42.193 "cd /home/ubuntu/Ansible && ansible-playbook playbook-dockerimage.yml && ansible-playbook playbook-container.yml"'
+        sshagent(['ansible-prv-key']) {
+          sh 'ssh -o strictHostKeyChecking=no ubuntu@13.40.164.130 "cd /home/ubuntu/Ansible && ansible-playbook playbook-dockerimage.yaml && ansible-playbook playbook-container.yaml && ansible-playbook playbook-newrelic.yaml"'
         }
       }
     }

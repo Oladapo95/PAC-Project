@@ -5,7 +5,6 @@ terraform {
     region         = "eu-west-2"
     dynamodb_table = "pacpet1_dynamo_table"
     encrypt        = true
-    #Need to specify profile here, dumb but it works
     profile = "personal"
   }
 }

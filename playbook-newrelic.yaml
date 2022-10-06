@@ -1,0 +1,16 @@
+- hosts: Docker_Servers
+  become: true
+  tasks:
+  - name: install newrelic agent
+    command: docker run \
+                    -d \
+                    --name newrelic-infra \
+                    --restart unless-stopped \
+                    --network=host \
+                    --cap-add=SYS_PTRACE \
+                    --privileged \
+                    --pid=host \
+                    -v "/:/host:ro" \
+                    -v "/var/run/docker.sock:/var/run/docker.sock" \
+                    -e NRIA_LICENSE_KEY=eu01xx1880d2f3288aedbb19b4dc9cbbdd5fNRAL \
+                    newrelic/infrastructure:latest
