@@ -343,7 +343,7 @@ resource "aws_instance" "pacpet1_jenkins" {
   instance_type               = "t2.medium"
   key_name                    = "pacpet1-key"
   associate_public_ip_address = true
-  subnet_id                   = aws_subnet.pacpet1_pubsn_02.id
+  subnet_id                   = aws_subnet.pacpet1_pubsn_01.id
   vpc_security_group_ids      = ["${aws_security_group.pacpet1_jenkins_sg.id}"]
   user_data                   = local.jenkins_user_data
   tags = {
@@ -365,32 +365,32 @@ resource "aws_instance" "pacpet1_sonarqube" {
   }
 }
 
-# resource "time_sleep" "wait_for_jenkins" {
-#   depends_on = [aws_instance.pacpet1_jenkins]
-#   create_duration = "150s"
-# }
+resource "time_sleep" "wait_for_jenkins" {
+  depends_on = [aws_instance.pacpet1_jenkins]
+  create_duration = "150s"
+}
 
-# #Echo password to screen
-# resource "null_resource" "user_data_status_y" {
-#   provisioner "local-exec" {
-#     on_failure  = fail
-#     interpreter = ["/bin/bash", "-c"]
-#     command     = <<EOT
-#           ssh -i pacpet1-key ubuntu@${aws_instance.pacpet1_jenkins.public_ip} "sudo cat /var/lib/jenkins/secrets/initialAdminPassword"
-#           if [ $? -eq 0 ]; then
-#           echo "user data sucessfully executed"
-#           else
-#             echo "Failed to execute user data"
-#           fi
-#      EOT
-#   }
-#     triggers = {
-#     #remove this once you test it out as it should run only once
-#     #always_run ="${timestamp()}"
-#   }
-#   depends_on = [time_sleep.wait_for_jenkins]
+#Echo password to screen
+resource "null_resource" "user_data_status_y" {
+  provisioner "local-exec" {
+    on_failure  = fail
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<EOT
+          ssh -o StrictHostKeyChecking=no -i pacpet1-key ubuntu@${aws_instance.pacpet1_jenkins.public_ip} "sudo cat /var/lib/jenkins/secrets/initialAdminPassword"
+          if [ $? -eq 0 ]; then
+          echo "user data sucessfully executed"
+          else
+            echo "Failed to execute user data"
+          fi
+     EOT
+  }
+    triggers = {
+    #remove this once you test it out as it should run only once
+    #always_run ="${timestamp()}"
+  }
+  depends_on = [time_sleep.wait_for_jenkins]
 
-# }
+}
 
 
 #Create AMI from EC2 Instance

@@ -51,7 +51,7 @@ locals {
   sudo unzip sonarqube-9.6.1.59531.zip -d /opt/
   sudo mv /opt/sonarqube-9.6.1.59531/ /opt/sonarqube
 
-  #Add group user sonarqube
+  #Add a new usergroup called sonar
   sudo groupadd sonar
 
   #Then, create a user and add the user into the group with directory permission to the /opt/ directory

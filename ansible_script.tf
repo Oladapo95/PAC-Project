@@ -1,9 +1,8 @@
 locals {
   ansible_user_data = <<-EOF
   #!/bin/bash
-  sudo apt update -y
-
   echo "*********Install Ansible********"
+  sudo apt update -y
   sudo apt install software-properties-common
   sudo add-apt-repository --yes --update ppa:ansible/ansible
   sudo apt update -y

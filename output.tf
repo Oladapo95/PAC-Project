@@ -18,3 +18,8 @@ output "SonarQube_Server" {
 output "NameServers" {
   value = "${aws_route53_zone.pacpet1_hosted_zone.name_servers}"
 }
+
+#Load Balancer
+output "LoadBalancer" {
+  value = "${aws_lb.pacpet1_lb.dns_name}"
+}
